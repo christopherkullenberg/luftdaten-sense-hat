@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 shake.py
+applicationid.txt
 # C extensions
 *.so
 

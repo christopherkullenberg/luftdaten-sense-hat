@@ -5,7 +5,7 @@ luftdata.startup(10803)
 
 try:
     while True:
-        luftdata.run(10803)
+        luftdata.runPIR(10803)
 
 except KeyboardInterrupt:
     luftdata.cleardisplay()
