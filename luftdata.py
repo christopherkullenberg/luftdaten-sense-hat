@@ -4,6 +4,7 @@ from time import sleep
 import requests
 import RPi.GPIO as GPIO
 import time
+from datetime import datetime
 
 
 '''
@@ -99,6 +100,7 @@ def scrolldisplay(sensorid):
 
 
 def startup(sensorid):
+    print("Booting...")
     sense.show_message("Booting...", scroll_speed=0.03, text_colour=r)
     # test for internet connection
     if len(getdata(sensorid)) == 3:
@@ -126,10 +128,12 @@ def runPIR(sensorid):
     while True:
         i = GPIO.input(11)
         if i == 0:  # When output from motion sensor is LOW
-            print("No intruders", i)
+            #print("No intruders", i)
             sleep(5)
         elif i == 1:  # When output from motion sensor is HIGH
+            print("-" * 40)
             print("INTRUDER DETECTED!!!", i)
+            print("Timestamp for detection: ", str(datetime.now()))
             for i in range(3):
                 sense.clear(b)
                 sleep(0.1)
