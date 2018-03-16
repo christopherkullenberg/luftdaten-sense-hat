@@ -1,10 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 from sense_hat import SenseHat
 from time import sleep
 import requests
 import RPi.GPIO as GPIO
 import time
 from datetime import datetime
+import sqlite3
+
+conn = sqlite3.connect('intruders.sqlite3')
+
+'''
+# Sqlite3 Schema:
+
+sqlite> CREATE TABLE intruders (clocktime TEXT, timestamp TEXT, pm10 TEXT, pm25
+TEXT, temp TEXT, humidity TEXT, UNIQUE(clocktime));
+'''
 
 
 '''
@@ -56,7 +66,7 @@ def cleardisplay():
     sense.clear()
 
 
-def scrolldisplay(sensorid):
+def scrolldisplay(sensorid, clocktime):
 
     currentdata = getdata(sensorid)
     print("current data: " + str(currentdata))
@@ -92,11 +102,12 @@ def scrolldisplay(sensorid):
     # sense.show_message("Temp: %s C" % round(temp, 2), text_colour=tempcolour)
     humidity = sense.get_humidity()
     print("Luftfuktighetet:" + str(humidity))
-    # sense.show_message("Luftfukt: %s %%rH" % round(humidity, 2), text_colour=v)
+    # sense.show_message("Fukt: %s %%rH" % round(humidity, 2), text_colour=v)
     sense.show_message(Time[10:], text_colour=g)
     sense.show_message(" Luftdata.se", text_colour=g)
-    #except KeyError:
-    #    sense.show_message("Network Error", text_colour=r)
+    conn.execute("INSERT INTO intruders (clocktime, timestamp, pm10, pm25, temp, humidity) VALUES (?, ?, ?, ?, ?, ?);", (str(clocktime), Time[10:], str(PM10), str(PM2), str(temp), str(humidity)))
+    print("Writing to database... SUCCESS.")
+    conn.commit()
 
 
 def startup(sensorid):
@@ -105,13 +116,14 @@ def startup(sensorid):
     # test for internet connection
     if len(getdata(sensorid)) == 3:
         sense.show_message("Network OK", scroll_speed=0.03, text_colour=g)
-        #sense.show_message("Press joystick to get data.....",
-        #                   scroll_speed=0.03, text_colour=b)
+        #  sense.show_message("Press joystick to get data.....",
+        #  scroll_speed=0.03, text_colour=b)
     else:
         sense.show_message("Network Error", scroll_speed=0.03, text_colour=r)
 
 
 def runjoystick(sensorid):
+    # This function is used for joystick user interaction.
     print("Waiting for joystick input...")
     event = sense.stick.wait_for_event()
     print("The joystick was {} {}".format(event.action, event.direction))
@@ -123,6 +135,7 @@ def runjoystick(sensorid):
 
 
 def runPIR(sensorid):
+    # This function is used for infrared motion detection as user input.
     print("Waiting for intruders to trigger measurement...")
     sense.show_message("Detecting movement... ", scroll_speed=0.03, text_colour=r)
     while True:
@@ -133,12 +146,12 @@ def runPIR(sensorid):
         elif i == 1:  # When output from motion sensor is HIGH
             print("-" * 40)
             print("INTRUDER DETECTED!!!", i)
-            print("Timestamp for detection: ", str(datetime.now()))
+            clocktime = str(datetime.now())
+            print("Timestamp for detection: ", clocktime)
             for i in range(3):
                 sense.clear(b)
                 sleep(0.1)
                 sense.clear()
                 sleep(0.1)
             cleardisplay()
-            scrolldisplay(sensorid)
-            #sleep(30)
+            scrolldisplay(sensorid, clocktime)
